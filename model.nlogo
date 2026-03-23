@@ -165,6 +165,15 @@ to benchmark-seed-panel
   ]
 end
 
+to benchmark-paired-comparison
+  ;; Run both scenarios with the same seed for a controlled comparison.
+  ;; This ensures all differences in outcomes are attributable to scenario
+  ;; parameters, not stochastic variation.
+  let comparison-seed 42424
+  benchmark-scenario "Tech-Driven" comparison-seed
+  benchmark-scenario "Human-Centric" comparison-seed
+end
+
 to benchmark-scenario [scenario-name seed-value]
   ;; This wrapper makes benchmark runs readable from the Command Center
   ;; and ensures every exported file encodes both the scenario and seed.
@@ -351,7 +360,7 @@ to apply-tech-driven
   set subsidy-bonus 0.00
   set adaptability-decay 0.010
   set benefit-replacement-rate 0.60
-  set propensity-to-consume 0.35
+  set propensity-to-consume 0.80
   set starting-savings-months 2.0
   set training-cost-per-seat 0.60
   set capital-stock 12.0
@@ -370,7 +379,7 @@ to apply-human-centric
   set subsidy-bonus 0.20
   set adaptability-decay 0.005
   set benefit-replacement-rate 0.60
-  set propensity-to-consume 0.35
+  set propensity-to-consume 0.80
   set starting-savings-months 2.0
   set training-cost-per-seat 0.60
   set capital-stock 12.0
@@ -560,15 +569,15 @@ to-report avg-supportive-coworkers
   ] of workers
 end
 
-to-report recovery-cluster-share
-  ;; Emergent clustering metric: among workers who are currently in the
-  ;; recovery pipeline, what share has at least one similarly recovering
-  ;; coworker next to them?
-  let recovering workers with [current-state = "in-training" or current-state = "re-employed"]
-  if not any? recovering [ report 0 ]
-  report (count recovering with [
-    any? (coworker-neighbors with [current-state = "in-training" or current-state = "re-employed"])
-  ] / count recovering) * 100
+to-report peer-boost-sd
+  ;; Standard deviation of peer-boost across workers. This directly
+  ;; measures spatial heterogeneity in the peer environment: higher SD
+  ;; means some workers enjoy strong local recovery signals while others
+  ;; face negative or negligible peer influence. Unlike recovery-cluster
+  ;; share, this metric is not mechanically confounded by displacement
+  ;; incidence.
+  if not any? workers [ report 0 ]
+  report standard-deviation [peer-boost] of workers
 end
 
 to update-coworker-peer-effects
@@ -662,7 +671,9 @@ to update-household-budgets
     ;; month's current inflows. Consumption is a fixed share of available
     ;; resources, and the residual becomes next month's liquid assets.
     set disposable-income liquid-assets + labor-income + transfer-income
-    set consumption min list disposable-income (propensity-to-consume * disposable-income)
+    ;; Consumption is a fixed share of cash-on-hand. Since propensity < 1
+    ;; by construction, consumption never exceeds disposable income.
+    set consumption propensity-to-consume * disposable-income
     set liquid-assets max list 0 (disposable-income - consumption)
   ]
 end
@@ -712,7 +723,12 @@ to update-sector-accounts [stage-next-capital?]
     ;; Capital used in the recorded row is the capital that actually
     ;; produced that month's automation output. The next-period stock is
     ;; staged separately and only applied at the start of the next go.
-    set next-capital-stock max list 0.50 ((1 - depreciation-rate) * capital-stock + private-investment)
+    ;; Depreciation is convex in installed capital: larger stocks are
+    ;; costlier to maintain, which produces natural convergence to a
+    ;; steady state without requiring a hard cap or full GE closure.
+    let effective-dep depreciation-rate * (1 + 0.01 * capital-stock)
+    ;; Floor prevents capital from approaching zero in the production function.
+    set next-capital-stock max list 0.50 ((1 - effective-dep) * capital-stock + private-investment)
   ] [
     set next-capital-stock capital-stock
   ]
@@ -992,7 +1008,7 @@ to-report history-header
       "seats_in_use"
       "unemployment_rate" "ever_unemployed_share" "avg_unemployment_time" "avg_unemployment_time_exposed" "avg_at_risk_time"
       "unemployment_burden_gini_exposed" "unemployment_duration_gini" "consumption_gini" "income_gini"
-      "avg_supportive_coworkers" "recovery_cluster_share"
+      "avg_supportive_coworkers" "peer_boost_sd"
       "avg_liquid_assets" "min_liquid_assets" "avg_consumption" "min_consumption"
       "labor_income_total" "transfer_income_total" "training_outlays"
       "tax_revenue" "government_balance"
@@ -1023,7 +1039,7 @@ to record-history-row
     consumption-gini
     income-gini
     avg-supportive-coworkers
-    recovery-cluster-share
+    peer-boost-sd
     avg-liquid-assets
     min [liquid-assets] of workers
     avg-consumption
@@ -1103,7 +1119,7 @@ to print-summary
     "  Consumption Gini: " precision consumption-gini 3)
   print (word
     "Avg Supportive Coworkers: " precision avg-supportive-coworkers 2
-    "  Recovery Cluster Share: " precision recovery-cluster-share 1 "%")
+    "  Peer-Boost SD: " precision peer-boost-sd 4)
   print (word
     "Output: " precision total-output 2
     "  Consumption: " precision household-consumption-total 2
@@ -1485,7 +1501,7 @@ The model reports observer-level aggregates:
 - capital stock
 - a goods-market gap
 
-The goods-market gap is reported explicitly instead of forcing a false equilibrium identity.
+The goods-market gap is reported explicitly instead of forcing a false equilibrium identity. Capital depreciation is convex in installed stock (larger stocks cost more to maintain), which produces natural convergence rather than explosive accumulation.
 
 The exported monthly rows are time-indexed so that month `t` uses month-`t` automation pressure for both worker transitions and macro flows. The `capital stock` shown in a row is the beginning-of-month stock used to produce that month's automation output; the next-period stock is staged for the following month.
 
@@ -1556,7 +1572,7 @@ NetLogo 6.4.0
     <metric>avg-unemployment-time-among-exposed</metric>
     <metric>unemployment-burden-gini-among-exposed</metric>
     <metric>avg-supportive-coworkers</metric>
-    <metric>recovery-cluster-share</metric>
+    <metric>peer-boost-sd</metric>
     <metric>unemployment-duration-gini</metric>
     <metric>consumption-gini</metric>
     <metric>total-output</metric>
@@ -1584,7 +1600,7 @@ NetLogo 6.4.0
     <metric>avg-unemployment-time-among-exposed</metric>
     <metric>unemployment-burden-gini-among-exposed</metric>
     <metric>avg-supportive-coworkers</metric>
-    <metric>recovery-cluster-share</metric>
+    <metric>peer-boost-sd</metric>
     <metric>unemployment-duration-gini</metric>
     <metric>consumption-gini</metric>
     <metric>total-output</metric>
@@ -1611,7 +1627,7 @@ NetLogo 6.4.0
     <metric>avg-unemployment-time-among-exposed</metric>
     <metric>unemployment-burden-gini-among-exposed</metric>
     <metric>avg-supportive-coworkers</metric>
-    <metric>recovery-cluster-share</metric>
+    <metric>peer-boost-sd</metric>
     <metric>unemployment-duration-gini</metric>
     <metric>consumption-gini</metric>
     <metric>total-output</metric>
