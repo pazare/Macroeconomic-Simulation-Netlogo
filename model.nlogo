@@ -726,9 +726,8 @@ to update-sector-accounts [stage-next-capital?]
     ;; Depreciation is convex in installed capital: larger stocks are
     ;; costlier to maintain, which produces natural convergence to a
     ;; steady state without requiring a hard cap or full GE closure.
-    let effective-dep depreciation-rate * (1 + 0.01 * capital-stock)
     ;; Floor prevents capital from approaching zero in the production function.
-    set next-capital-stock max list 0.50 ((1 - effective-dep) * capital-stock + private-investment)
+    set next-capital-stock max list 0.50 ((1 - depreciation-rate * (1 + 0.003 * capital-stock)) * capital-stock + private-investment)
   ] [
     set next-capital-stock capital-stock
   ]
