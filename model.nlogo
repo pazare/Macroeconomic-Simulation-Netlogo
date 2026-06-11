@@ -6,8 +6,9 @@ extensions [csv]
 ;; One tick = one month
 ;; ============================================================
 ;; This file is intentionally the only simulation implementation in
-;; the repository. Python audits NetLogo exports, and the browser plus
-;; memo only visualize audited outputs.
+;; the repository. The model is self-contained: benchmark runs export
+;; CSVs so results can be analyzed and presented externally, as in the
+;; accompanying memo.
 ;;
 ;; Workers are the only agents. Government policy and technology
 ;; conditions are represented with observer-level scenario settings.
@@ -85,7 +86,7 @@ globals [
 
   ;; Export buffers
   ;; History rows are accumulated in memory and written once per run so
-  ;; the audit script can consume a single clean CSV per benchmark.
+  ;; each benchmark produces a single clean CSV for external analysis.
   history-rows
 ]
 
@@ -145,12 +146,12 @@ to setup-with-fixed-seed [seed-value]
 end
 
 to benchmark-tech-driven
-  ;; Canonical benchmark used by the audit pipeline and memo.
+  ;; Canonical benchmark reported in the memo.
   benchmark-scenario "Tech-Driven" 10101
 end
 
 to benchmark-human-centric
-  ;; Canonical benchmark used by the audit pipeline and memo.
+  ;; Canonical benchmark reported in the memo.
   benchmark-scenario "Human-Centric" 20202
 end
 
@@ -394,7 +395,7 @@ end
 ;; ============================================================
 
 to-report scenario-slug-from-choice
-  ;; File-safe scenario name for exports and the audit contract.
+  ;; File-safe scenario name used in export filenames.
   if scenario-choice = "Human-Centric" [
     report "human_centric"
   ]
@@ -983,8 +984,8 @@ end
 
 to export-run-data
   ;; Every benchmark run exports a full monthly history, a final worker
-  ;; microdata snapshot, and plot data. The Python audit script reads the
-  ;; first two; the plots file is there for manual inspection if needed.
+  ;; microdata snapshot, and plot data. The first two are the primary
+  ;; analysis files; the plots file is for manual inspection if needed.
   let history-file (word "extras/data/" scenario-slug "_seed_" starting-seed "_history.csv")
   let worker-file (word "extras/data/" scenario-slug "_seed_" starting-seed "_workers.csv")
   let plot-file (word "extras/data/" scenario-slug "_seed_" starting-seed "_plots.csv")
@@ -999,8 +1000,8 @@ to export-run-data
 end
 
 to-report history-header
-  ;; The audit script depends on these exact column names. If you change
-  ;; them, you must update verify_model.py and downstream consumers too.
+  ;; Exported CSVs use these exact column names. If you change them,
+  ;; update any external analysis that consumes the exports as well.
   report (list
     (list
       "tick" "scenario" "seed" "employed" "at_risk" "in_training" "unemployed" "re_employed"
@@ -1017,7 +1018,7 @@ end
 
 to record-history-row
   ;; One row per month, including tick 0. These histories are what allow
-  ;; the downstream pipeline to compute audited scenario summaries.
+  ;; scenario summaries to be computed outside NetLogo.
   let row (list
     ticks
     scenario-slug
@@ -1418,7 +1419,7 @@ PENS
 
 This model simulates workforce transitions under AI pressure in a small labor market with 28 workers. It keeps the assignment scope intentionally narrow: workers are the only agents, while policy and technology are represented through scenario settings.
 
-Each tick is one month. The canonical logic lives in this NetLogo model. Downstream Python, preview, and memo artifacts are intended to audit and present NetLogo outputs rather than reproduce the model independently.
+Each tick is one month. The canonical logic lives in this NetLogo model, which is self-contained: benchmark runs export CSVs (see extras/data/) so results can be analyzed and presented externally, as in the accompanying memo.
 
 ## HOW IT WORKS
 
