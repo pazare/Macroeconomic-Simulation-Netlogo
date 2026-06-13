@@ -16,9 +16,15 @@ With identical workers, identical workplace geography, and identical random draw
 | Unemployment burden Gini among exposed workers | 0.478 | 0.000 |
 | Total output at horizon | 79.5 | 55.0 |
 
+Peak unemployment rate is the maximum over the 200-month horizon; the other four rows are end-of-horizon (month 200) values.
+
+![Unemployment-rate paths over 200 months for the Tech-Driven and Human-Centric scenarios on seed 42424. The Tech-Driven path stays high and volatile (peaking at 14.3%) while the Human-Centric path settles near zero within the first year.](docs/figures/unemployment_paths_seed_42424.png)
+
+_Illustrative model output from a single paired run (seed 42424), regenerated from the committed data by [`extras/analyze_paired_comparison.py`](extras/analyze_paired_comparison.py)._
+
 The core finding is an efficiency-equity tradeoff. Faster automation raises aggregate output but concentrates long unemployment spells on a subset of routine-task workers, and a capacity-constrained training system turns that exposure into persistent queues. Modest policy differences in training seats, course length, and subsidy support produce large aggregate differences because local peer spillovers amplify whichever regime is in place.
 
-Full write-up with figures and limitations is in `AI Workforce Odyssey Memo.pdf`.
+Full write-up with figures and limitations is in [the memo (PDF)](docs/ai-workforce-odyssey-memo.pdf).
 
 ## How the model works
 
@@ -32,24 +38,28 @@ The model also reports observer-level sector accounts each month: output, privat
 
 ## How to run it
 
-1. Install [NetLogo](https://ccl.northwestern.edu/netlogo/) 6.4 or later.
+1. Install [NetLogo](https://ccl.northwestern.edu/netlogo/). The committed benchmark data was generated with NetLogo 7.0.3; the model file itself is saved in NetLogo 6.4 format, which current NetLogo opens directly. Use 7.0.3 to reproduce the committed CSVs exactly.
 2. Open `model.nlogo`.
 3. Pick a scenario with the `scenario-choice` chooser, then press `setup` and `go`.
 
-For reproducible benchmark runs, use the Command Center:
+For reproducible benchmark runs, use the Command Center (run from the repo root so exports land in `extras/data/`):
 
 - `benchmark-paired-comparison` runs both scenarios on the same seed, the controlled comparison behind the memo results.
 - `benchmark-tech-driven` and `benchmark-human-centric` run the canonical single-scenario benchmarks.
 - `benchmark-seed-panel` runs a small multi-seed robustness panel for both scenarios.
 
-Each benchmark run exports three CSVs (monthly history, plot series, and end-of-run worker panel) named by scenario and seed. BehaviorSpace experiment definitions for the same benchmarks are embedded in the model file.
+Each benchmark run exports three CSVs (monthly history, plot series, and end-of-run worker panel) named by scenario and seed. The model file also embeds BehaviorSpace experiments for the single-scenario benchmarks and the seed-42424 paired comparison; the multi-seed robustness panel is run from the Command Center via `benchmark-seed-panel`.
+
+To reproduce the headline table and figure from the already-committed data without opening NetLogo, run `python3 extras/analyze_paired_comparison.py` (requires pandas and matplotlib). It recomputes every number in the table above, asserts it matches, and regenerates the figure.
 
 ## Repository contents
 
 - `model.nlogo` — the full simulation, including interface, documentation tab, and BehaviorSpace experiments
-- `AI Workforce Odyssey Memo.pdf` — five-page memo with model design, scenario results, and limitations
-- `AI Use Appendix.pdf` — transparency appendix documenting how AI assistants were used during development, including verification practices
+- [`docs/ai-workforce-odyssey-memo.pdf`](docs/ai-workforce-odyssey-memo.pdf) — five-page memo with model design, scenario results, and limitations
+- [`docs/ai-use-appendix.pdf`](docs/ai-use-appendix.pdf) — transparency appendix documenting how AI assistants were used during development, including verification practices
+- `docs/figures/` — the headline figure above, generated from the committed data
 - `extras/data/` — exported CSV runs, including the paired seed-42424 runs reported in the memo and additional robustness seeds
+- [`extras/analyze_paired_comparison.py`](extras/analyze_paired_comparison.py) — recomputes the headline table from the committed CSVs (asserting it matches this README) and regenerates the figure
 
 ## Scope and limitations
 
