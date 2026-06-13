@@ -158,7 +158,8 @@ end
 to benchmark-seed-panel
   ;; Small robustness panel: enough to show the model is not driven by
   ;; a single lucky seed, without making the assignment unmanageably
-  ;; large or slow.
+  ;; large or slow. The Tech-Driven seed 10101 here intentionally matches
+  ;; benchmark-tech-driven; that overlap is deliberate, not an accident.
   foreach (list "Tech-Driven" "Human-Centric") [ scenario-name ->
     foreach (list 10101 10102 10103 10104 10105) [ seed-value ->
       benchmark-scenario scenario-name seed-value
@@ -1616,9 +1617,10 @@ NetLogo 6.4.0
       <value value="10"/>
     </enumeratedValueSet>
   </experiment>
-  <experiment name="Scenario Seed Panel" repetitions="1" sequentialRunOrder="false" runMetricsEveryStep="false">
-    <setup>setup-with-fixed-seed (10000 + behaviorspace-run-number)</setup>
+  <experiment name="Paired Comparison (seed 42424)" repetitions="1" sequentialRunOrder="false" runMetricsEveryStep="true">
+    <setup>setup-with-fixed-seed 42424</setup>
     <go>go</go>
+    <final>finalize-run</final>
     <timeLimit steps="200"/>
     <metric>count-in-state "employed"</metric>
     <metric>count-in-state "unemployed"</metric>
