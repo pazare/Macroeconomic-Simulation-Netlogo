@@ -6,3 +6,5 @@ Each run produces three CSVs named `<scenario>_seed_<seed>_{history,plots,worker
 - All other seeds — additional ad-hoc robustness runs exported during development, not cited in the memo. The documented robustness procedure is `benchmark-seed-panel` (seeds 10101–10105).
 
 To regenerate any of these, run the `benchmark-*` procedures from the Command Center; exports are written to this folder.
+
+The committed seed-42424 pair can be turned back into the README's headline table and figure with `python3 extras/analyze_paired_comparison.py` (run from the repo root; requires pandas and matplotlib). That script reads only `*_seed_42424_history.csv`.
